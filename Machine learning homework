@@ -1,0 +1,19 @@
+nohup /home/jiangz/software/fastp -q 25 -w 10 -u 40 -i /home/jiangz/data/CP2019052800013/H101SC19051758/A00510/X101SC19051758-Z01/X101SC19051758-Z01-J003/raw/MDCK_G1_2h_1.fq.gz -I /home/jiangz/data/CP2019052800013/H101SC19051758/A00510/X101SC19051758-Z01/X101SC19051758-Z01-J003/raw/MDCK_G1_2h_2.fq.gz -o out_G1_2h_1.fq.gz -O out_G1_2h_2.fq.gz -h report_G1_2h.html &
+~/software/hisat2-2.1.0/hisat2-build -p 4 /home/jiangz/data/CP2019052800013/H101SC19051758/A00510/X101SC19051758-Z01/X101SC19051758-Z01-J003/genome/Canis_lupus_familiaris.fa genome
+nohup ~/software/hisat2-2.1.0/hisat2 -p 10 -x /home/jiangz/data/CP2019052800013/H101SC19051758/A00510/X101SC19051758-Z01/X101SC19051758-Z01-J003/raw/fastp_test/hisat_index/genome -1 /home/jiangz/data/CP2019052800013/H101SC19051758/A00510/X101SC19051758-Z01/X101SC19051758-Z01-J003/raw/fastp_test/out_2h_1.fq.gz -2 /home/jiangz/data/CP2019052800013/H101SC19051758/A00510/X101SC19051758-Z01/X101SC19051758-Z01-J003/raw/fastp_test/out_2h_2.fq.gz -S out_2h.sam &
+nohup /home/software/samtools-1.9/samtools view -buhS out_G1_0h.sam | /home/software/samtools-1.9/samtools sort -@ 8 - -o out_G1_0h.sorted.bam &
+nohup ~/software/featureCounts/subread-1.5.3-Linux-x86_64/bin/featureCounts -T 5 -p -t exon -g gene_id -a /home/jiangz/data/CP2019052800013/H101SC19051758/A00510/X101SC19051758-Z01/X101SC19051758-Z01-J003/genome/Canis_lupus_familiaris.gtf  -o  all_id.txt  *.bam 1>counts.id.log 2>&1  &
+a <- read.delim("C:/Users/Administrator/Desktop/fsdownload/all_id.txt.txt", header=T, comment.char="#")
+exprSet=a[,7:ncol(a)]
+rm_exprSet=a[,-(2:6)]
+rownames(rm_exprSet)<-rm_exprSet[,1]
+rm_exprSet<-rm_exprSet[,-1]
+condition <- factor(c(rep("no",4),rep("G1",4)), levels = c("no","G1"))# or下一行
+group_list=c("no","no","no","no","G1","G1","G1","G1")
+colData1 <- data.frame(row.names=colnames(rm_exprSet), condition)
+library(DESeq2)
+dds <- DESeqDataSetFromMatrix(countData = rm_exprSet,colData = colData1,design = ~ condition)
+dds <- DESeq(dds)
+dds <- estimateSizeFactors(dds)
+rld <- rlog(dds)
+plotPCA(rld)
